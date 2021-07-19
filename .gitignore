@@ -1,0 +1,6 @@
+/.vscode
+/H_test.fasta
+/H_train.fasta
+/__pycache__
+/data2.py
+/test2.py
