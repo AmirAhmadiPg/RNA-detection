@@ -110,15 +110,6 @@ from tensorflow.keras import models, layers
 n_samples = 0
 n_correct = 0
 sample, target = dl_train[0]
-regressor = models.Sequential([
-    layers.Dropout(0.10),
-    layers.GRU(units=50, input_shape=(
-        sample.shape[1], 1)),
-    layers.Dense(units=1)])
-
-regressor.compile(optimizer="adam", loss="mean_squared_error")
-regressor.fit(sample, target, epochs=3, batch_size=32)
-
 
 # save & load model
 # save entire model
