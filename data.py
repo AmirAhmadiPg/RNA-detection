@@ -142,8 +142,6 @@ with torch.no_grad():
     print(
         f'Accuracy of the network on the 7000 test RNA sequences: {acc_test:.4f} %')
 
-print(all_losses)
-print(len(all_losses))
 
 x_train = np.arange(0, num_epochs)
 plt.figure()
