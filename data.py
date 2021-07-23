@@ -32,7 +32,6 @@ def collate_seqs(integerized_samples):
     batch_size = len(integerized_samples)
     integerized_seqs = [s[0] for s in integerized_samples]
     maxlen = max([len(seq) for seq in integerized_seqs])
-    print(f'\n\n\n\n\n\n\n\n{maxlen}\n\n\n\n\n\n\n\n')
     padded_input_tensor = torch.zeros((maxlen, batch_size), dtype=torch.long)
     for i, s in enumerate(integerized_seqs):
         for j, v in enumerate(s):
