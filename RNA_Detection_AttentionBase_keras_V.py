@@ -1,21 +1,24 @@
 # To add a new cell, type '# %%'
 # To add a new markdown cell, type '# %% [markdown]'
-# %%
-import csv
+
+import numpy as np
+from tensorflow.python.keras.engine.base_layer import Layer
 import torch
+from Bio import SeqIO
+# import matplotlib.pyplot as plt
+from tensorflow.keras import models, layers
+from tensorflow.keras import activations
 import numpy as np
 import pandas as pd
+import numpy as np
+import pandas as pd
+import torch
+import csv
 from Bio import SeqIO
 import tensorflow as tf
-from traceback import print_tb
-from tensorflow.keras import activations
-from tensorflow.keras import models, layers
-from tensorflow.keras.utils import plot_model
 from tensorflow.keras.utils import to_categorical
-from tensorflow.python.keras.engine.base_layer import Layer
 
 
-# %%
 fasta_train = 'H_train.fasta'
 csv_train = 'H_train.csv'
 fasta_test = 'H_test.fasta'
@@ -82,13 +85,11 @@ print(train_labels.shape)
 
 length_of_one_rna = max_train
 
-# %% [markdown]
 # 
-# %% [markdown]
 # test
 # 
 
-# %%
+
 
 ## Add label to the test dataset and generate X_test=record.seq and Y_test=label
 size_test = 0 
@@ -119,94 +120,82 @@ max_test = df_test['length'].max()
 # print('the max lengths of the test dataset is {}'.format(max_test))
 
 
-# %%
-input_layer = layers.Input(shape=(max_train,))
 
 
-# embedded_input = layers.Embedding(input_dim=1, output_dim=6, mask_zero=True)(input_layer)
-## input_dim: Integer. Size of the vocabulary,
-## input shape: (batch_size, input_length)
-## output shape: 3D tensor with shape: (batch_size, input_length, output_dim)
+def get_angles(pos, i, d_model):
+    angle_rates = 1 / np.power(10000, (2 * (i//2)) / np.float32(d_model))
+    return pos * angle_rates
 
-key0 = layers.Dense(length_of_one_rna, name='key_layer')(input_layer)
-query0 = layers.Dense(length_of_one_rna, name='query_layer')(input_layer)
-values0 = layers.Dense(length_of_one_rna, name='values_layer')(input_layer)
+def positional_encoding(x):
+    position = x[0]
+    d_model = x[1]
+    
+    angle_rads = get_angles(np.arange(position)[:, np.newaxis],
+                            np.arange(d_model)[np.newaxis, :],
+                            d_model)
 
-attention_kernel0 = layers.Attention()([key0, query0])
-attention_kernel_normilized0 = layers.Softmax()(attention_kernel0)
+    # apply sin to even indices in the array; 2i
+    angle_rads[:, 0::2] = np.sin(angle_rads[:, 0::2])
 
-attention_output0 = layers.Attention()([attention_kernel_normilized0, values0])
-attention_output0 = layers.Dense(length_of_one_rna, name='normilize_dims_layer')(attention_output0)
+    # apply cos to odd indices in the array; 2i+1
+    angle_rads[:, 1::2] = np.cos(angle_rads[:, 1::2])
 
-key1 = layers.Dense(length_of_one_rna)(input_layer)
-query1 = layers.Dense(length_of_one_rna)(input_layer)
-values1 = layers.Dense(length_of_one_rna)(input_layer)
+    pos_encoding = angle_rads[np.newaxis, ...]
 
-attention_kernel1 = layers.Attention()([key1, query1])
-attention_kernel_normilized1 = layers.Softmax()(attention_kernel1)
+    return pos_encoding
 
-attention_output1 = layers.Attention()([attention_kernel_normilized1, values1])
-attention_output1 = layers.Dense(length_of_one_rna)(attention_output1)
 
-key2 = layers.Dense(length_of_one_rna)(input_layer)
-query2 = layers.Dense(length_of_one_rna)(input_layer)
-values2 = layers.Dense(length_of_one_rna)(input_layer)
 
-attention_kernel2 = layers.Attention()([key2, query2])
-attention_kernel_normilized2 = layers.Softmax()(attention_kernel1)
+input_layer1 = layers.Input(shape=(max_train,))
 
-attention_output2 = layers.Attention()([attention_kernel_normilized2, values2])
-attention_output2 = layers.Dense(length_of_one_rna)(attention_output2)
+embedding_layer = tf.keras.layers.Embedding(input_dim=5, output_dim=6, input_length=3000)(input_layer1)
 
-concated_heads = layers.Concatenate()([attention_output0, attention_output1, attention_output2])
+positional_embedding = layers.Lambda(positional_encoding)([3000, 6])
 
-attention_output = layers.Dense(length_of_one_rna)(concated_heads)
+add_embeddings = layers.Add()([embedding_layer, positional_embedding])
 
-RNNS_input = layers.Reshape((3000, -1))(attention_output)
+flatt_output = layers.Flatten()(add_embeddings)
 
-# Conv1d = layers.Conv1D(32, 3)(RNNS_input)
-# Conv1d = layers.Conv1D(64, 3)(Conv1d)
-# Conv1d = layers.Conv1D(128, 3)(Conv1d)
+length_of_one_rna = 18000 # output_dim*input_length
 
-GRU_layer = layers.GRU(100,return_sequences=True, recurrent_dropout=0.5)(RNNS_input)
-hidden = layers.Dense(100, activation='tanh')(GRU_layer)
+query0 = layers.Dense(length_of_one_rna, name='query_layer')(flatt_output)
+
+values0 = layers.Dense(length_of_one_rna, name='values_layer')(flatt_output)
+
+attention_kernel0 = layers.Attention()([query0, values0])
+
+
+RNNS_input = layers.Reshape((3000, -1))(attention_kernel0)
+
+# Add & Norm
+# Add = tf.keras.layers.Add()([input_layer, RNNS_input])
+
+# feed_forward
+hidden = layers.Dense(10, activation='relu')(RNNS_input)
+hidden = layers.Dense(15, activation='relu')(hidden)
+
+
+GRU_layer = layers.GRU(2, return_sequences=True, recurrent_dropout=0.05)(hidden)
+hidden = layers.Dense(2, activation='relu')(GRU_layer)
 cf = layers.Dense(1, activation='sigmoid')(hidden)
 
-
-# %%
 adam = tf.keras.optimizers.Adam(
-    learning_rate=0.0004,
-    beta_1=0.9,
-    beta_2=0.999,
+    learning_rate=0.009,
+    beta_1=0.6,
+    beta_2=0.6,
     epsilon=1e-07,
     amsgrad=False,
     name="Adam")
-sgd = tf.keras.optimizers.SGD(lr=0.1, momentum=0.8, nesterov=True)
 
-classifier = models.Model(input_layer, cf)
+classifier = models.Model(input_layer1, cf)
 
 classifier.compile(loss='binary_crossentropy',
                    optimizer= adam,       
                    metrics=['accuracy'])
 
 
-# %%
-classifier.summary()
-
-
-# %%
-plot_model(classifier)
-
-
-# %%
-classifier.fit(padded_inputs, train_labels, batch_size=1, epochs=10)
-
-
-# %%
-classifier.save('./epoch_10_attention.h5')
-
-
-# %%
+        # regressor.fit(sample, target, epochs=3, batch_size=32)
+classifier.fit(padded_inputs, train_labels, epochs=5, batch_size=1)
 
 
 
