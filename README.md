@@ -3,56 +3,57 @@
 * [General info](#general-info)
 * [Technologies](#technologies)
 * [Setup](#setup)
-* [output example](#output-example)
-
-## this was a project for ict6 challenge
-about this challenge:
-The ICT challenge is **the most popular** tournament between Programmers, with questions in different parts of computer science like: **A.i, Blockchain, web design, back-end development, and more...**
-**We got 3rd 🥉 place in this tournament**
-
-Country: **Iran**
-Date: **15th july 2021**
-Organizer: **ICT faculty, Sharif university of technology,  Tehran, Iran**
-Organize Website: http://ictchallenge.sharif.ir/
+* [Hyperparameters](#Hyperparameters)
 
 # General info
-this project will **cluster** 4 classes of customers: **Legendary/Epic/Rare/Common customer**
+in this project, we are trying to solve the problem of classification coding and non-coding with Recurrent neural networks and Multi-head Attention models
 
-These clusters are trained on the **ict6 challenge dataset** and you can download it from the repository (trade.csv).
+# Hyperparameters
 
-we choose to use **karmozd(or tx)** and the **number of trades** for features to train the model
+**Positional embeding:**
+PE(pos, 2i) = sin(pos / 10000 ** 2i / d model)
+PE(pos, 2i+1) = cos(pos / 10000 ** 2i / d model)
 
-### normilization:
+**Embedding inputs:**
+input dims = 5
+output dims = 6
 
-**upper limit = Q3 + 1.5 * IQR**
-**lower limit = Q3 - 1.5 * IQR**
+**Attention layers:**
+1 Head attention
 
-**every data upper or lower than this threshold value have to remove from dataset**
-**lowerlimit < data < upperlimit**
+**RNN layers:**
+GRU with 2 cells
+
+**Hidden layers:**
+1 Dense layer befor RNN with units: (10, 15)
+2 Dense layer after RNN with units: 2
+
+**classification layer:**
+Dense with 1 unit
 
 
-### hyperparameters for clustering:
+**Compile Model:**
+Loss: Binary crossentropy
+Optimizer: Adam
 
-**number of clusters = 4**
-
+**Optimizer Paramiters:**
+learning rate: 0.009
+beta 1: 0.6
+beta 2: 0.6
+opsilon: 1e-07
 
 ## Technologies
 project is created with:
 
 * language: **python**
 * python version: **3.8.8**
-* libs: **sklearn, matplotlib and pandas**
+* libs: **Tensorflow, Keras, Pytorch, Bio, pandas, Numpy, Matplotlib, Tensorboard**
 
 ## Setup
 To run this project, install it locally using python:
 ```
 $ cd /addres/to/project/folder
-$ python3 Main.py
+$ python3 RNA_Detection_AttentionBase_keras_V.py #For tensorflow version
+$ python3 data.py #For pytorch version 
 ```
-
-## output example
-### output of metric 1
-![alt text](./output_metric_1.png?raw=true)
-
-### output of metric 2
-![alt text](./output_metric_2.png?raw=true)
+**Warning Pytorch version is without attention layers**
