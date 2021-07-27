@@ -1,4 +1,4 @@
-# Welcome to the loyal_customers wiki!
+# Welcome to the RNA Detection wiki!
 ## Table of contents
 * [General info](#general-info)
 * [Technologies](#technologies)
