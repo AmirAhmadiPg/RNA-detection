@@ -16,7 +16,16 @@ import torch
 import csv
 from Bio import SeqIO
 import tensorflow as tf
-from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.callbacks import TensorBoard
+
+tensorboard = TensorBoard(
+  log_dir='./logs',
+  histogram_freq=1,
+  write_images=True
+)
+keras_callbacks = [
+  tensorboard
+]
 
 
 fasta_train = 'H_train.fasta'
@@ -39,7 +48,7 @@ emb_dict = {letter: number + 1 for number, letter in
         
 with open(csv_train, 'w') as f:
     writer = csv.writer(f)
-    for record in SeqIO.parse("../input/lnrna-ncrna-test-and-train-dataset/H_train.fasta", "fasta"):
+    for record in SeqIO.parse("/home/amirahmadipg/Documents/Programs/RNA/MasterThesis/scripts/H_test.fasta", "fasta"):
         label_train = 0 if 'CDS' in record.id else 1
         #print(label_train)
         tarin_sample = []
@@ -100,7 +109,7 @@ test_labels = []
 
 with open(csv_test, 'w') as t:
     writer = csv.writer(t)
-    for record in SeqIO.parse('../input/lnrna-ncrna-test-and-train-dataset/H_test.fasta', 'fasta'):
+    for record in SeqIO.parse('/home/amirahmadipg/Documents/Programs/RNA/MasterThesis/scripts/H_test.fasta', 'fasta'):
         label_test = 0 if 'CDS' in record.id else 1
         writer.writerow([record.id, record.seq, len(record), label_test])
         size_test = size_test+1
@@ -195,7 +204,7 @@ classifier.compile(loss='binary_crossentropy',
 
 
         # regressor.fit(sample, target, epochs=3, batch_size=32)
-classifier.fit(padded_inputs, train_labels, epochs=5, batch_size=1)
+classifier.fit(padded_inputs, train_labels, epochs=5, batch_size=1, callbacks=keras_callbacks)
 
 
 
